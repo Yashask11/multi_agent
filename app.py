@@ -26,12 +26,36 @@ if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
 from dotenv import load_dotenv
 load_dotenv()
 
-from flask import Flask, request, jsonify, render_template, Response, stream_with_context
+from flask import Flask, request, jsonify, render_template, Response, stream_with_context, redirect, url_for
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
+from pyngrok import ngrok
 from agents.planner import plan
 from agents.researcher import research
 from agents.executor import execute
 
 app = Flask(__name__)
+app.secret_key = os.getenv("SECRET_KEY", "super-secret-key-1234")
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = "login"
+
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(150), unique=True, nullable=False)
+    password_hash = db.Column(db.String(256), nullable=False)
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+with app.app_context():
+    db.create_all()
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 logging.basicConfig(
@@ -44,11 +68,52 @@ logger = logging.getLogger(__name__)
 
 @app.route("/")
 def index():
+    """Serve the landing page."""
+    return render_template("landing.html", current_user=current_user)
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        data = request.get_json()
+        username = data.get("username")
+        password = data.get("password")
+        user = User.query.filter_by(username=username).first()
+        if user and check_password_hash(user.password_hash, password):
+            login_user(user)
+            return jsonify({"status": "success"})
+        return jsonify({"status": "error", "message": "Invalid username or password"}), 401
+    return render_template("login.html")
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        data = request.get_json()
+        username = data.get("username")
+        password = data.get("password")
+        if User.query.filter_by(username=username).first():
+            return jsonify({"status": "error", "message": "Username already exists"}), 400
+        new_user = User(username=username, password_hash=generate_password_hash(password))
+        db.session.add(new_user)
+        db.session.commit()
+        login_user(new_user)
+        return jsonify({"status": "success"})
+    return render_template("register.html")
+
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for("index"))
+
+@app.route("/app")
+@login_required
+def application():
     """Serve the main UI."""
-    return render_template("index.html")
+    return render_template("app.html", current_user=current_user)
 
 
 @app.route("/api/run", methods=["POST"])
+@login_required
 def run_pipeline():
     """
     Stream the multi-agent pipeline as Server-Sent Events.
@@ -181,5 +246,18 @@ def _sse(event: str, data: dict) -> str:
 
 if __name__ == "__main__":
     print("\n  Multi-Agent System Web UI")
-    print("  Open http://localhost:5000 in your browser\n")
+    ngrok_token = os.getenv("NGROK_AUTHTOKEN")
+    if ngrok_token:
+        ngrok.set_auth_token(ngrok_token)
+        try:
+            print("  Starting Ngrok tunnel...")
+            public_url = ngrok.connect(5000).public_url
+            print(f"  Public URL: {public_url}")
+            print("  Open this link on any device!\n")
+        except Exception as e:
+            print(f"  Failed to start ngrok: {e}")
+    else:
+        print("  (Ngrok authtoken not found in .env. Running locally only. To share publicly, add NGROK_AUTHTOKEN to .env)\n")
+        print("  Open http://localhost:5000 in your browser\n")
+        
     app.run(debug=False, port=5000, threaded=True)

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Antigravity | Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .auth-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .auth-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 3rem;
+            width: 100%;
+            max-width: 400px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            text-align: center;
+        }
+        .auth-title {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .auth-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-bottom: 2rem;
+        }
+        .auth-input {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            margin-bottom: 1rem;
+            transition: all 0.2s;
+        }
+        .auth-input:focus {
+            outline: none;
+            border-color: var(--accent-1);
+            box-shadow: 0 0 0 3px rgba(255, 81, 47, 0.2);
+        }
+        .auth-btn {
+            width: 100%;
+            padding: 0.85rem;
+            background: var(--gradient-primary);
+            color: #fff;
+            border: none;
+            border-radius: 100px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .auth-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(221, 36, 118, 0.3);
+        }
+        .auth-link {
+            display: inline-block;
+            margin-top: 1.5rem;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-decoration: none;
+        }
+        .auth-link:hover {
+            color: #fff;
+        }
+        .error-msg {
+            color: #ef4444;
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+    </style>
+</head>
+<body class="landing-body">
+    <div class="mesh-bg">
+        <div class="mesh-blob blob-1"></div>
+        <div class="mesh-blob blob-2"></div>
+        <div class="mesh-blob blob-3"></div>
+    </div>
+
+    <nav class="landing-nav">
+        <a href="/" class="logo" style="text-decoration: none;">
+            <span class="logo-text">Antigravity AI</span>
+        </a>
+    </nav>
+
+    <div class="auth-container">
+        <div class="auth-card">
+            <h2 class="auth-title">Welcome Back</h2>
+            <p class="auth-subtitle">Log in to access your workspace.</p>
+            
+            <div id="errorMsg" class="error-msg"></div>
+
+            <form id="loginForm">
+                <input type="text" id="username" class="auth-input" placeholder="Username" required>
+                <input type="password" id="password" class="auth-input" placeholder="Password" required>
+                <button type="submit" class="auth-btn">Log In</button>
+            </form>
+            
+            <a href="/register" class="auth-link">Don't have an account? Sign Up</a>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById("loginForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector("button");
+            btn.textContent = "Logging in...";
+            btn.disabled = true;
+
+            const res = await fetch("/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    username: document.getElementById("username").value,
+                    password: document.getElementById("password").value
+                })
+            });
+            const data = await res.json();
+            
+            if (res.ok) {
+                window.location.href = "/app";
+            } else {
+                const err = document.getElementById("errorMsg");
+                err.textContent = data.message;
+                err.style.display = "block";
+                btn.textContent = "Log In";
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
