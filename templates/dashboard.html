@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus AI | Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 4rem auto;
+            padding: 0 2rem;
+            color: #fff;
+        }
+        .history-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            backdrop-filter: blur(10px);
+        }
+        .history-query {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #fff;
+        }
+        .history-date {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+        .history-result {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .history-result h1, .history-result h2, .history-result h3 {
+            color: #fff;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        .history-result p { margin-bottom: 0.5rem; }
+    </style>
+</head>
+<body class="landing-body">
+    <div class="mesh-bg">
+        <div class="mesh-blob blob-1"></div>
+        <div class="mesh-blob blob-2"></div>
+        <div class="mesh-blob blob-3"></div>
+    </div>
+
+    <nav class="landing-nav">
+        <a href="/" class="logo" style="text-decoration: none;">
+            <span class="logo-text">Nexus AI</span>
+        </a>
+        <div style="display: flex; gap: 1.5rem; align-items: center;">
+            <span style="font-size: 0.9rem; color: var(--text-muted);">Hi, {{ current_user.username }}</span>
+            <a href="/app" class="nav-link">Workspace</a>
+            <a href="/settings" class="nav-link">Settings</a>
+            <a href="/logout" class="nav-link" style="color: #ef4444;">Logout</a>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <h2 style="font-size: 2.5rem; font-weight: 800; margin-bottom: 2rem;">Your History</h2>
+        
+        {% if history %}
+            {% for item in history %}
+            <div class="history-card">
+                <div class="history-query">{{ item.query }}</div>
+                <div class="history-date">{{ item.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</div>
+                <div class="history-result markdown-body" id="result-{{ item.id }}"></div>
+                <script>
+                    document.getElementById('result-{{ item.id }}').innerHTML = marked.parse(`{{ item.result | replace('`', '\\`') | safe }}`);
+                </script>
+            </div>
+            {% endendfor %}
+        {% else %}
+            <p style="color: var(--text-muted);">You haven't run any research queries yet. Head to the Workspace to get started!</p>
+        {% endif %}
+    </div>
+</body>
+</html>

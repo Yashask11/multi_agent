@@ -49,7 +49,7 @@ Rules:
 # Public API
 # ---------------------------------------------------------------------------
 
-def plan(query: str) -> list[dict]:
+def plan(query: str, model: str = None, temperature: float = 0.3) -> list[dict]:
     """
     Break *query* into a list of task dicts.
 
@@ -80,7 +80,8 @@ def plan(query: str) -> list[dict]:
         result = call_llm_json(
             prompt=prompt,
             system_prompt=PLANNER_SYSTEM_PROMPT,
-            temperature=0.3,   # low temp → more predictable structure
+            temperature=temperature,
+            model=model,
         )
     except ValueError:
         # First parse failed — retry with an even more explicit nudge
@@ -94,7 +95,8 @@ def plan(query: str) -> list[dict]:
         result = call_llm_json(
             prompt=prompt,
             system_prompt=PLANNER_SYSTEM_PROMPT,
-            temperature=0.1,
+            temperature=max(0.1, temperature - 0.2), # reduce temp for retry
+            model=model,
         )
 
     # Validate shape — we expect a list of dicts

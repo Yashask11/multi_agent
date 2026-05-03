@@ -18,6 +18,7 @@ import sys
 import io
 import concurrent.futures
 import queue
+from datetime import datetime
 
 # Force UTF-8 on Windows
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
@@ -49,6 +50,16 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
+    preferred_model = db.Column(db.String(100), default="llama-3.3-70b-versatile")
+    temperature = db.Column(db.Float, default=0.7)
+    histories = db.relationship('QueryHistory', backref='user', lazy=True)
+
+class QueryHistory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    query = db.Column(db.Text, nullable=False)
+    result = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -105,6 +116,25 @@ def logout():
     logout_user()
     return redirect(url_for("index"))
 
+@app.route("/dashboard")
+@login_required
+def dashboard():
+    """Serve the user history dashboard."""
+    history = QueryHistory.query.filter_by(user_id=current_user.id).order_by(QueryHistory.created_at.desc()).all()
+    return render_template("dashboard.html", current_user=current_user, history=history)
+
+@app.route("/settings", methods=["GET", "POST"])
+@login_required
+def settings():
+    """Serve and update user settings."""
+    if request.method == "POST":
+        data = request.get_json()
+        current_user.preferred_model = data.get("model", current_user.preferred_model)
+        current_user.temperature = float(data.get("temperature", current_user.temperature))
+        db.session.commit()
+        return jsonify({"status": "success"})
+    return render_template("settings.html", current_user=current_user)
+
 @app.route("/app")
 @login_required
 def application():
@@ -127,6 +157,10 @@ def run_pipeline():
     if not query:
         return jsonify({"error": "Query is required."}), 400
 
+    model = current_user.preferred_model
+    temperature = current_user.temperature
+    user_id = current_user.id
+
     def generate():
         start_time = time.time()
 
@@ -134,7 +168,7 @@ def run_pipeline():
         yield _sse("step", {"step": 1, "name": "Planning", "status": "running"})
 
         try:
-            tasks = plan(query)
+            tasks = plan(query, model=model, temperature=temperature)
         except (ValueError, RuntimeError) as exc:
             logger.exception("Planner error")
             yield _sse("error", {"message": f"Planner failed: {exc}"})
@@ -165,7 +199,7 @@ def run_pipeline():
         def worker(task, idx):
             desc = task["description"]
             try:
-                result = research(desc)
+                result = research(desc, model=model, temperature=max(0.1, temperature - 0.2))
                 q.put(("done", task, idx, result))
             except Exception as exc:
                 q.put(("error", task, idx, exc))
@@ -215,7 +249,10 @@ def run_pipeline():
         yield _sse("step", {"step": 3, "name": "Synthesising", "status": "running"})
 
         try:
-            final_answer = execute(query, research_results)
+            final_answer = execute(query, research_results, model=model, temperature=temperature)
+            history = QueryHistory(user_id=user_id, query=query, result=final_answer)
+            db.session.add(history)
+            db.session.commit()
         except RuntimeError as exc:
             logger.exception("Executor error")
             yield _sse("error", {"message": f"Executor failed: {exc}"})

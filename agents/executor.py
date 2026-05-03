@@ -43,7 +43,7 @@ Rules:
 # Public API
 # ---------------------------------------------------------------------------
 
-def execute(query: str, research_results: list[dict]) -> str:
+def execute(query: str, research_results: list[dict], model: str = None, temperature: float = 0.4) -> str:
     """
     Combine research findings into a final, structured answer.
 
@@ -80,7 +80,8 @@ def execute(query: str, research_results: list[dict]) -> str:
     result = call_llm(
         prompt=prompt,
         system_prompt=EXECUTOR_SYSTEM_PROMPT,
-        temperature=0.4,   # slightly creative but mostly faithful
+        temperature=temperature,
+        model=model,
         max_tokens=2048,
     )
 

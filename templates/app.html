@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
     <!-- Vivid Mesh Gradient Background -->
@@ -50,9 +51,9 @@
                 </div>
             </div>
             <div style="display: flex; align-items: center; gap: 1.5rem;">
-                <span class="badge">Phase 3</span>
                 <span style="font-size: 0.85rem; color: var(--text-muted);">Hi, {{ current_user.username }}</span>
-                <a href="/" class="nav-link" style="font-size: 0.85rem;">Home</a>
+                <a href="/dashboard" class="nav-link" style="font-size: 0.85rem;">Dashboard</a>
+                <a href="/settings" class="nav-link" style="font-size: 0.85rem;">Settings</a>
                 <a href="/logout" class="nav-link" style="font-size: 0.85rem; color: #ef4444;">Logout</a>
             </div>
         </header>
@@ -355,13 +356,22 @@
 
         function downloadResult() {
             if (!rawAnswer) return;
-            const blob = new Blob([rawAnswer], { type: 'text/markdown' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'multi-agent-report.md';
-            a.click();
-            URL.revokeObjectURL(url);
+            const element = document.getElementById("resultBody");
+            const btn = document.querySelector(".action-btn[title='Download Report']");
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<span style="font-size: 0.75rem; font-weight: bold;">PDF...</span>';
+            
+            const opt = {
+                margin:       [0.5, 0.5, 0.5, 0.5],
+                filename:     'Nexus_Research_Report.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#1e1e2e' },
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+            
+            html2pdf().set(opt).from(element).save().then(() => {
+                btn.innerHTML = originalHTML;
+            });
         }
 
         function resetUI() {
