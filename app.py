@@ -38,7 +38,7 @@ from agents.executor import execute
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "super-secret-key-1234")
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///users.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -297,4 +297,5 @@ if __name__ == "__main__":
         print("  (Ngrok authtoken not found in .env. Running locally only. To share publicly, add NGROK_AUTHTOKEN to .env)\n")
         print("  Open http://localhost:5000 in your browser\n")
         
-    app.run(debug=False, port=5000, threaded=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
