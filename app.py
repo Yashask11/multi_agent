@@ -28,6 +28,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from flask import Flask, request, jsonify, render_template, Response, stream_with_context, redirect, url_for
+from flask_compress import Compress
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -37,6 +38,7 @@ from agents.researcher import research
 from agents.executor import execute
 
 app = Flask(__name__)
+Compress(app)
 app.secret_key = os.getenv("SECRET_KEY", "super-secret-key-1234")
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///users.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False

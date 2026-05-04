@@ -11,4 +11,4 @@ requests>=2.31.0
 fastapi
 uvicorn
 groq
-python-dotenv
+Flask-Compress>=1.14.0

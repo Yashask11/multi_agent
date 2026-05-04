@@ -78,9 +78,10 @@ body {
 .orb {
     position: absolute;
     border-radius: 50%;
-    filter: blur(100px);
+    filter: blur(80px); /* Slightly reduced for performance */
     opacity: 0.15;
     animation: float 20s ease-in-out infinite;
+    will-change: transform;
 }
 
 .orb-1 {
@@ -823,14 +824,16 @@ body {
     z-index: -1;
     background: #000;
     overflow: hidden;
+    content-visibility: auto;
 }
 
 .mesh-blob {
     position: absolute;
-    filter: blur(120px);
+    filter: blur(100px); /* Reduced blur for performance */
     opacity: 0.6;
     border-radius: 50%;
     animation: drift 20s infinite alternate ease-in-out;
+    will-change: transform;
 }
 
 .blob-1 { width: 600px; height: 600px; background: #FF512F; top: -10%; left: -10%; }
