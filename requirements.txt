@@ -12,3 +12,4 @@ fastapi
 uvicorn
 groq
 Flask-Compress>=1.14.0
+psycopg2-binary>=2.9.9
