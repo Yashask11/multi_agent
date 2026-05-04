@@ -124,5 +124,11 @@
             <p>Watch the agents think. Server-Sent Events stream the pipeline progress live to your screen.</p>
         </div>
     </section>
+    <script>
+        // Wake server silently on page load to eliminate Render cold start lag
+        window.addEventListener('load', () => {
+            fetch('/ping').catch(() => {});
+        });
+    </script>
 </body>
 </html>
