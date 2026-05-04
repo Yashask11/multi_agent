@@ -121,27 +121,52 @@
     </div>
 
     <script>
+        // STEP 1: Wake server silently on page load
+        window.addEventListener('load', () => {
+            fetch('/ping').catch(() => {});
+        });
+
         document.getElementById("regForm").addEventListener("submit", async (e) => {
             e.preventDefault();
             const btn = e.target.querySelector("button");
+            const err = document.getElementById("errorMsg");
+            
+            err.style.display = "none";
             btn.textContent = "Creating...";
             btn.disabled = true;
 
-            const res = await fetch("/register", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    username: document.getElementById("username").value,
-                    password: document.getElementById("password").value
-                })
-            });
-            const data = await res.json();
-            
-            if (res.ok) {
-                window.location.href = "/app";
-            } else {
-                const err = document.getElementById("errorMsg");
-                err.textContent = data.message;
+            // STEP 4 & 5: Show timeout feedback if server is waking up
+            let statusTimeout = setTimeout(() => {
+                if (btn.disabled) {
+                    btn.textContent = "Starting server... Please wait";
+                }
+            }, 5000);
+
+            try {
+                const res = await fetch("/register", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        username: document.getElementById("username").value,
+                        password: document.getElementById("password").value
+                    })
+                });
+                
+                const data = await res.json();
+                clearTimeout(statusTimeout);
+                
+                if (res.ok) {
+                    btn.textContent = "Success! Redirecting...";
+                    window.location.href = "/app";
+                } else {
+                    err.textContent = data.message || "Sign up failed";
+                    err.style.display = "block";
+                    btn.textContent = "Sign Up";
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                clearTimeout(statusTimeout);
+                err.textContent = "Network error. Server might be offline.";
                 err.style.display = "block";
                 btn.textContent = "Sign Up";
                 btn.disabled = false;

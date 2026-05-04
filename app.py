@@ -84,6 +84,10 @@ def index():
     """Serve the landing page."""
     return render_template("landing.html", current_user=current_user)
 
+@app.route("/ping")
+def ping():
+    return jsonify({"status": "awake"})
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
