@@ -9,3 +9,8 @@ __pycache__/
 # IDE
 .vscode/
 .idea/
+
+# Database & Instances
+*.db
+instance/
+.DS_Store
