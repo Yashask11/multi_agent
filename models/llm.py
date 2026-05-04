@@ -98,19 +98,18 @@ def call_llm(
 
     for attempt in range(1, max_retries + 1):
         try:
-            logger.debug(
-                "LLM call attempt %d/%d  model=%s  temp=%.2f",
-                attempt, max_retries, model, temperature,
-            )
+            logger.info("LLM call attempt %d/%d (model=%s, temp=%.2f)...", attempt, max_retries, model, temperature)
             response = client.chat.completions.create(
                 model=model,
                 messages=messages,
                 temperature=temperature,
                 max_tokens=max_tokens,
+                timeout=30.0, # 30s timeout to prevent hanging forever
             )
             content = response.choices[0].message.content
             if content is None:
                 raise ValueError("LLM returned an empty response.")
+            logger.info("LLM responded successfully.")
             return content.strip()
 
         except (RateLimitError, APIConnectionError) as exc:

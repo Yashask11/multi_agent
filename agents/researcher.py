@@ -114,6 +114,7 @@ def research(task_description: str, model: str = None, temperature: float = 0.3)
     RuntimeError
         Propagated from the LLM wrapper on unrecoverable API errors.
     """
+    logger.info(">>> RESEARCHER AGENT STARTING for task: %s", task_description)
     logger.info("Researcher working on: %s", task_description)
 
     # 1. Ask LLM to choose a tool
@@ -161,6 +162,7 @@ def research(task_description: str, model: str = None, temperature: float = 0.3)
         max_tokens=1024,
     )
 
+    logger.info(">>> RESEARCHER RESPONSE (len: %d chars)", len(result))
     logger.info(
         "Researcher completed task (response length: %d chars).", len(result)
     )

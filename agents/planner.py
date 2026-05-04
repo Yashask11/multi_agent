@@ -69,6 +69,8 @@ def plan(query: str, model: str = None, temperature: float = 0.3) -> list[dict]:
         If the LLM output cannot be parsed into a valid task list
         after a retry attempt.
     """
+    logger.info("--- PLANNER STARTING ---")
+    logger.info(">>> PLANNER AGENT STARTING for query: %s", query)
     logger.info("Planner received query: %s", query)
 
     prompt = (
@@ -101,6 +103,7 @@ def plan(query: str, model: str = None, temperature: float = 0.3) -> list[dict]:
 
     # Validate shape — we expect a list of dicts
     tasks = _validate_tasks(result)
+    logger.info(">>> PLANNER RESPONSE: %s", tasks)
     logger.info("Planner produced %d task(s).", len(tasks))
     return tasks
 

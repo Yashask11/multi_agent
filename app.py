@@ -168,10 +168,12 @@ def run_pipeline():
     user_id = current_user.id
 
     def generate():
+        logger.info("--- STARTING MULTI-AGENT PIPELINE ---")
         start_time = time.time()
-
-        # ── Step 1: Planning ──
-        yield _sse("step", {"step": 1, "name": "Planning", "status": "running"})
+        
+        try:
+            # ── Step 1: Planning ──
+            yield _sse("step", {"step": 1, "name": "Planning", "status": "running"})
 
         try:
             tasks = plan(query, model=model, temperature=temperature)
@@ -271,6 +273,10 @@ def run_pipeline():
             "elapsed": round(elapsed, 1),
         })
         yield _sse("done", {"elapsed": round(elapsed, 1)})
+            
+        except Exception as global_exc:
+            logger.exception("Global pipeline error")
+            yield _sse("error", {"message": f"System error: {global_exc}"})
 
     return Response(
         stream_with_context(generate()),
